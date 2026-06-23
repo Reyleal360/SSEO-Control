@@ -366,6 +366,14 @@ input:focus, select:focus, textarea:focus {
 
 .modal-body {
   padding: 20px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
 }
 
 .form-group {

@@ -347,6 +347,19 @@ const app = {
     },
 
     // --- MODALES Y SESIONES ---
+    abrirModalRegistroEstudiante() {
+        document.getElementById('form-estudiante').reset();
+        document.getElementById('modal-overlay').style.display = 'flex';
+        document.getElementById('modal-estudiante').style.display = 'block';
+        lucide.createIcons();
+    },
+
+    abrirModalEntidad() {
+        document.getElementById('form-entidad').reset();
+        document.getElementById('modal-overlay').style.display = 'flex';
+        document.getElementById('modal-entidad').style.display = 'block';
+        lucide.createIcons();
+    },
     abrirModalSesion(estId) {
         document.getElementById('sesion-est-id').value = estId;
         document.getElementById('sesion-fecha').value = new Date().toISOString().split('T')[0];
@@ -364,7 +377,11 @@ const app = {
     cerrarModales() {
         document.getElementById('modal-overlay').style.display = 'none';
         document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
-        document.getElementById('form-sesion').reset();
+        // Reset forms safely
+        ['form-sesion', 'form-estudiante', 'form-entidad'].forEach(id => {
+            const f = document.getElementById(id);
+            if(f) f.reset();
+        });
     },
 
     toggleInasistenciaFields() {
@@ -463,6 +480,78 @@ const app = {
         } finally {
             btn.disabled = false;
             btn.textContent = "Guardar";
+        }
+    },
+
+    async submitEstudiante(e) {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+        try {
+            const id = Date.now().toString();
+            await this.postSheet({
+                action: 'append',
+                sheet: 'estudiantes',
+                row: [
+                    id,
+                    document.getElementById('est-nombre').value,
+                    document.getElementById('est-apellido').value,
+                    document.getElementById('est-grado').value,
+                    document.getElementById('est-grupo').value,
+                    document.getElementById('est-documento').value,
+                    document.getElementById('est-acudiente').value,
+                    document.getElementById('est-telefono').value,
+                    'Sin iniciar', 0, '', '', '', 'FALSE', ''
+                ]
+            });
+            alert('Estudiante registrado exitosamente.');
+            this.cerrarModales();
+            await this.fetchEstudiantes();
+            this.renderEstudiantes();
+        } catch(err) {
+            console.error(err);
+            alert('Error registrando estudiante.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Guardar Estudiante';
+        }
+    },
+
+    async submitEntidad(e) {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.textContent = 'Guardando...';
+        try {
+            const id = Date.now().toString();
+            await this.postSheet({
+                action: 'append',
+                sheet: 'entidades',
+                row: [
+                    id,
+                    document.getElementById('ent-nombre').value,
+                    document.getElementById('ent-tipo').value,
+                    document.getElementById('ent-nit').value,
+                    document.getElementById('ent-direccion').value,
+                    document.getElementById('ent-telefono').value,
+                    document.getElementById('ent-contacto').value,
+                    document.getElementById('ent-email').value,
+                    'FALSE', '', 
+                    document.getElementById('ent-cupo').value,
+                    0
+                ]
+            });
+            alert('Entidad registrada. Debe ser aprobada por un coordinador.');
+            this.cerrarModales();
+            await this.fetchEntidades();
+            this.renderEntidades();
+        } catch(err) {
+            console.error(err);
+            alert('Error registrando entidad.');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Guardar Entidad';
         }
     },
 

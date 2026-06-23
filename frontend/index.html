@@ -27,7 +27,7 @@
                 <a href="#estudiantes" class="nav-item" data-view="estudiantes">
                     <i data-lucide="users"></i> Estudiantes
                 </a>
-                <a href="#entidades" class="nav-item" data-view="building-2">
+                <a href="#entidades" class="nav-item" data-view="entidades">
                     <i data-lucide="building-2"></i> Entidades
                 </a>
             </nav>
@@ -192,6 +192,104 @@
                 </div>
                 
                 <button type="submit" class="btn btn-primary w-full">Guardar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Nuevo Estudiante -->
+    <div id="modal-estudiante" class="modal">
+        <div class="modal-header">
+            <h2>Registrar Estudiante</h2>
+            <button class="close-btn" onclick="app.cerrarModales()"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="form-estudiante" onsubmit="app.submitEstudiante(event)">
+                <div class="form-group">
+                    <label for="est-nombre">Nombre</label>
+                    <input type="text" id="est-nombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="est-apellido">Apellido</label>
+                    <input type="text" id="est-apellido" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="est-grado">Grado</label>
+                        <select id="est-grado" required>
+                            <option value="9">9°</option>
+                            <option value="10">10°</option>
+                            <option value="11">11°</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="est-grupo">Grupo</label>
+                        <input type="text" id="est-grupo" placeholder="Ej: A" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="est-documento">N° Documento</label>
+                    <input type="text" id="est-documento" required>
+                </div>
+                <div class="form-group">
+                    <label for="est-acudiente">Acudiente</label>
+                    <input type="text" id="est-acudiente" required>
+                </div>
+                <div class="form-group">
+                    <label for="est-telefono">Teléfono</label>
+                    <input type="tel" id="est-telefono" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-full">Guardar Estudiante</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Nueva Entidad -->
+    <div id="modal-entidad" class="modal">
+        <div class="modal-header">
+            <h2>Registrar Entidad</h2>
+            <button class="close-btn" onclick="app.cerrarModales()"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="form-entidad" onsubmit="app.submitEntidad(event)">
+                <div class="form-group">
+                    <label for="ent-nombre">Nombre de la Entidad</label>
+                    <input type="text" id="ent-nombre" required>
+                </div>
+                <div class="form-group">
+                    <label for="ent-tipo">Tipo</label>
+                    <select id="ent-tipo" required>
+                        <option value="Pública">Pública</option>
+                        <option value="Sin ánimo de lucro">Sin ánimo de lucro</option>
+                        <option value="Educativa">Educativa</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="ent-nit">NIT</label>
+                    <input type="text" id="ent-nit" required>
+                </div>
+                <div class="form-group">
+                    <label for="ent-direccion">Dirección</label>
+                    <input type="text" id="ent-direccion" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="ent-telefono">Teléfono</label>
+                        <input type="tel" id="ent-telefono" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="ent-cupo">Cupo Máximo</label>
+                        <input type="number" id="ent-cupo" min="1" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="ent-contacto">Persona de Contacto</label>
+                    <input type="text" id="ent-contacto" required>
+                </div>
+                <div class="form-group">
+                    <label for="ent-email">Email</label>
+                    <input type="email" id="ent-email">
+                </div>
+                <button type="submit" class="btn btn-primary w-full">Guardar Entidad</button>
             </form>
         </div>
     </div>
