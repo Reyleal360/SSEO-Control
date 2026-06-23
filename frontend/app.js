@@ -258,52 +258,39 @@ const app = {
                 <div class="ficha-horas-large">
                     <div class="num">${est.horas_completadas}</div>
                     <div class="label">de 80 horas obligatorias</div>
-                </div>
-            </div>
-
-            <div class="ficha-grid">
-                <div>
-                    <div class="view-header" style="margin-bottom: 16px;">
-                        <h3>Historial de Sesiones</h3>
-                        <button class="btn btn-primary" onclick="app.abrirModalSesion('${est.id}')" ${est.servicio_cancelado ? 'disabled' : ''}>+ Registrar Sesión</button>
-                    </div>
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Horas</th>
-                                    <th>Actividad / Obs.</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${estSesiones.map(s => `
-                                    <tr>
-                                        <td>${s.fecha}</td>
-                                        <td>${s.inasistencia ? '<span class="text-danger">Inasistencia</span>' : s.horas + 'h'}</td>
-                                        <td>${s.inasistencia && !s.justificada ? 'Injustificada' : (s.actividad || s.observaciones)}</td>
-                                    </tr>
-                                `).join('')}
-                                ${estSesiones.length === 0 ? '<tr><td colspan="3">No hay sesiones registradas.</td></tr>' : ''}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <div>
-                    <div class="view-header" style="margin-bottom: 16px;">
-                        <h3>Documentos</h3>
-                    </div>
-                    <div class="checklist mb-4">
-                        ${docChecks}
-                    </div>
-                    
-                    <button class="btn ${est.horas_completadas >= 80 ? 'btn-primary' : 'btn-outline'} w-full" 
+                    <button class="btn ${est.horas_completadas >= 80 ? 'btn-primary' : 'btn-outline'} w-full"
+                            style="margin-top: 12px"
                             onclick="app.generarCertificado('${est.id}')"
                             ${est.horas_completadas < 80 ? 'disabled' : ''}>
                         Generar Certificado
                     </button>
                 </div>
+            </div>
+
+            <div class="view-header" style="margin-bottom: 16px;">
+                <h3>Historial de Sesiones</h3>
+                <button class="btn btn-primary" onclick="app.abrirModalSesion('${est.id}')" ${est.servicio_cancelado ? 'disabled' : ''}>+ Registrar Sesión</button>
+            </div>
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Horas</th>
+                            <th>Actividad / Obs.</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${estSesiones.map(s => `
+                            <tr>
+                                <td>${s.fecha}</td>
+                                <td>${s.inasistencia ? '<span class="text-danger">Inasistencia</span>' : s.horas + 'h'}</td>
+                                <td>${s.inasistencia && !s.justificada ? 'Injustificada' : (s.actividad || s.observaciones)}</td>
+                            </tr>
+                        `).join('')}
+                        ${estSesiones.length === 0 ? '<tr><td colspan="3" style="color: var(--text-muted)">No hay sesiones registradas.</td></tr>' : ''}
+                    </tbody>
+                </table>
             </div>
         `;
         
