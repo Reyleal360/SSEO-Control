@@ -88,24 +88,24 @@ const app = {
     async fetchEstudiantes() {
         const rows = await this.fetchSheet('estudiantes');
         this.state.estudiantes = rows.map(row => ({
-            id: row[0], nombre: row[1], apellido: row[2],
-            grado: row[3], grupo: row[4], documento: row[5],
-            acudiente: row[6], telefono: row[7], estado_sseo: row[8],
+            id: String(row[0]), nombre: String(row[1] || ''), apellido: String(row[2] || ''),
+            grado: String(row[3] || ''), grupo: String(row[4] || ''), documento: String(row[5] || ''),
+            acudiente: String(row[6] || ''), telefono: String(row[7] || ''), estado_sseo: String(row[8] || 'Sin iniciar'),
             horas_completadas: parseInt(row[9] || '0', 10),
-            entidad_actual: row[10], fecha_inicio: row[11],
-            fecha_fin: row[12], servicio_cancelado: (row[13] === true || row[13] === 'TRUE'),
-            motivo_cancelacion: row[14]
+            entidad_actual: String(row[10] || ''), fecha_inicio: String(row[11] || ''),
+            fecha_fin: String(row[12] || ''), servicio_cancelado: (row[13] === true || row[13] === 'TRUE'),
+            motivo_cancelacion: String(row[14] || '')
         }));
     },
 
     async fetchEntidades() {
         const rows = await this.fetchSheet('entidades');
         this.state.entidades = rows.map(row => ({
-            id: row[0], nombre: row[1], tipo: row[2],
-            nit: row[3], direccion: row[4], telefono: row[5],
-            contacto: row[6], email: row[7],
+            id: String(row[0]), nombre: String(row[1] || ''), tipo: String(row[2] || ''),
+            nit: String(row[3] || ''), direccion: String(row[4] || ''), telefono: String(row[5] || ''),
+            contacto: String(row[6] || ''), email: String(row[7] || ''),
             aprobada: (row[8] === true || row[8] === 'TRUE'),
-            fecha_aprobacion: row[9], cupo_maximo: parseInt(row[10] || '0', 10),
+            fecha_aprobacion: String(row[9] || ''), cupo_maximo: parseInt(row[10] || '0', 10),
             estudiantes_activos: parseInt(row[11] || '0', 10)
         }));
     },
@@ -113,12 +113,12 @@ const app = {
     async fetchSesiones() {
         const rows = await this.fetchSheet('sesiones');
         this.state.sesiones = rows.map(row => ({
-            id: row[0], estudiante_id: row[1], fecha: row[2],
-            horas: parseInt(row[3] || '0', 10), entidad_id: row[4],
-            supervisor: row[5], actividad: row[6],
+            id: String(row[0]), estudiante_id: String(row[1]), fecha: String(row[2] || ''),
+            horas: parseInt(row[3] || '0', 10), entidad_id: String(row[4] || ''),
+            supervisor: String(row[5] || ''), actividad: String(row[6] || ''),
             inasistencia: (row[7] === true || row[7] === 'TRUE'),
             justificada: (row[8] === true || row[8] === 'TRUE'),
-            observaciones: row[9]
+            observaciones: String(row[9] || '')
         }));
     },
 
@@ -206,12 +206,14 @@ const app = {
     },
 
     async verFicha(id) {
-        const est = this.state.estudiantes.find(e => e.id === id);
-        if(!est) return;
+        // Convertir a string para comparación segura (Sheets puede retornar números)
+        const sid = String(id);
+        const est = this.state.estudiantes.find(e => String(e.id) === sid);
+        if(!est) { console.error('Estudiante no encontrado:', id); return; }
         this.state.estudianteActual = est;
         
-        const estSesiones = this.state.sesiones.filter(s => s.estudiante_id === id);
-        const estDocs = this.state.documentos.filter(d => d.estudiante_id === id);
+        const estSesiones = this.state.sesiones.filter(s => String(s.estudiante_id) === sid);
+        const estDocs = this.state.documentos.filter(d => String(d.estudiante_id) === sid);
         
         // Riesgo semáforo
         const inasistencias = estSesiones.filter(s => s.inasistencia && !s.justificada).length;
@@ -307,6 +309,8 @@ const app = {
         
         document.getElementById('ficha-content').innerHTML = content;
         this.navigate('ficha');
+        // Renderizar íconos de Lucide dentro del HTML dinámico
+        lucide.createIcons();
     },
 
     // --- ENTIDADES ---
