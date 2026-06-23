@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSEO Control - Gestión de Servicio Social</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <aside class="sidebar no-print">
+            <div class="sidebar-header">
+                <h2>SSEO Control</h2>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="nav-item active" data-view="dashboard">
+                    <i data-lucide="layout-dashboard"></i> Dashboard
+                </a>
+                <a href="#estudiantes" class="nav-item" data-view="estudiantes">
+                    <i data-lucide="users"></i> Estudiantes
+                </a>
+                <a href="#entidades" class="nav-item" data-view="building-2">
+                    <i data-lucide="building-2"></i> Entidades
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- VIEW: DASHBOARD -->
+            <section id="view-dashboard" class="view active">
+                <header class="view-header">
+                    <h1>Dashboard</h1>
+                </header>
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <h3>Total Estudiantes</h3>
+                        <div class="metric-value" id="dash-total-est">0</div>
+                    </div>
+                    <div class="metric-card">
+                        <h3>Completaron 80h</h3>
+                        <div class="metric-value" id="dash-completos">0%</div>
+                    </div>
+                    <div class="metric-card warning">
+                        <h3>En Riesgo (≥2 inasistencias)</h3>
+                        <div class="metric-value" id="dash-riesgo">0</div>
+                    </div>
+                </div>
+                
+                <div class="dashboard-tables">
+                    <div class="table-container">
+                        <h3>Top 5 más cerca de completar</h3>
+                        <table class="data-table" id="table-top-5">
+                            <thead>
+                                <tr>
+                                    <th>Estudiante</th>
+                                    <th>Progreso (80h)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Dynamic content -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- VIEW: ESTUDIANTES -->
+            <section id="view-estudiantes" class="view">
+                <header class="view-header">
+                    <h1>Estudiantes</h1>
+                    <button class="btn btn-primary" onclick="app.abrirModalRegistroEstudiante()">+ Nuevo Estudiante</button>
+                </header>
+                <div class="filters">
+                    <input type="text" id="search-est" placeholder="Buscar por nombre..." onkeyup="app.renderEstudiantes()">
+                </div>
+                <div class="table-container">
+                    <table class="data-table" id="table-estudiantes">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Grado</th>
+                                <th>Progreso</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- VIEW: FICHA ESTUDIANTE -->
+            <section id="view-ficha" class="view">
+                <button class="btn btn-outline mb-4" onclick="app.navigate('estudiantes')"><i data-lucide="arrow-left"></i> Volver</button>
+                <div id="ficha-content">
+                    <!-- Dynamic content -->
+                </div>
+            </section>
+
+            <!-- VIEW: ENTIDADES -->
+            <section id="view-entidades" class="view">
+                <header class="view-header">
+                    <h1>Entidades</h1>
+                    <button class="btn btn-primary" onclick="app.abrirModalEntidad()">+ Nueva Entidad</button>
+                </header>
+                <div class="table-container">
+                    <table class="data-table" id="table-entidades">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Cupo</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Dynamic content -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <!-- VIEW: CERTIFICADO -->
+            <section id="view-certificado" class="view print-only-view">
+                <!-- Certificado Content -->
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-overlay" class="modal-overlay"></div>
+    
+    <!-- Modal: Registrar Sesión -->
+    <div id="modal-sesion" class="modal">
+        <div class="modal-header">
+            <h2>Registrar Sesión / Inasistencia</h2>
+            <button class="close-btn" onclick="app.cerrarModales()"><i data-lucide="x"></i></button>
+        </div>
+        <div class="modal-body">
+            <form id="form-sesion" onsubmit="app.submitSesion(event)">
+                <input type="hidden" id="sesion-est-id">
+                
+                <div class="form-group checkbox-group">
+                    <label>
+                        <input type="checkbox" id="sesion-is-inasistencia" onchange="app.toggleInasistenciaFields()">
+                        ¿Es una inasistencia?
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label for="sesion-fecha">Fecha</label>
+                    <input type="date" id="sesion-fecha" required>
+                </div>
+                
+                <div class="form-group" id="group-horas">
+                    <label for="sesion-horas">Horas (Máx 8)</label>
+                    <input type="number" id="sesion-horas" min="1" max="8" required>
+                </div>
+                
+                <div class="form-group" id="group-justificada" style="display:none;">
+                    <label>
+                        <input type="checkbox" id="sesion-justificada">
+                        ¿Falta Justificada?
+                    </label>
+                </div>
+                
+                <div class="form-group">
+                    <label for="sesion-entidad">Entidad</label>
+                    <select id="sesion-entidad" required></select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="sesion-supervisor">Supervisor</label>
+                    <input type="text" id="sesion-supervisor" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="sesion-actividad">Actividad / Observaciones</label>
+                    <textarea id="sesion-actividad" required></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-full">Guardar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+    <script>
+      lucide.createIcons();
+    </script>
+</body>
+</html>
