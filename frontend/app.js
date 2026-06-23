@@ -1,5 +1,249 @@
 // Reemplaza esta URL con la que te genere Google Apps Script al publicar el Web App
-const API_URL = 'https://script.google.com/macros/s/AKfycbwOM7Ofw3SCrxMEhbv-bNlczigjtlR0bBQiudFK7x-hf01iIjj8gZzq8isOF1zMaXA9/exec'; 
+const API_URL = 'https://script.google.com/macros/s/AKfycbwOM7Ofw3SCrxMEhbv-bNlczigjtlR0bBQiudFK7x-hf01iIjj8gZzq8isOF1zMaXA9/exec';
+
+// ─────────────────────────────────────────────────────────
+const auth = {
+
+  // ── SHA-256 con Web Crypto (async, nativo del browser) ─────
+  async sha256(str) {
+    const buf = await crypto.subtle.digest(
+      'SHA-256',
+      new TextEncoder().encode(str)
+    );
+    return Array.from(new Uint8Array(buf))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+  },
+
+  // Devuelve la fecha local en formato YYYY-MM-DD (misma que el servidor)
+  todayString() {
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  },
+
+  // ── Sesión (───────────────────────────────────────────────
+  getSession() {
+    try {
+      const raw = localStorage.getItem('sseo_session');
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  },
+
+  saveSession(data) {
+    localStorage.setItem('sseo_session', JSON.stringify(data));
+  },
+
+  clearSession() {
+    localStorage.removeItem('sseo_session');
+  },
+
+  isLoggedIn() {
+    const s = this.getSession();
+    return !!s && !!s.token && !!s.email;
+  },
+
+  getRole() {
+    const s = this.getSession();
+    return s ? s.rol : null;
+  },
+
+  isCoordinador() {
+    return this.getRole() === 'coordinador';
+  },
+
+  // ── Pantalla de login vs app ──────────────────────────────
+  showLogin() {
+    document.getElementById('login-screen').style.display = 'flex';
+    document.getElementById('app').style.display = 'none';
+    lucide.createIcons();
+  },
+
+  showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    this.applyRoleRestrictions();
+    this.renderSidebarUser();
+    lucide.createIcons();
+  },
+
+  // ── Auth guard ─────────────────────────────────────────────
+  guard() {
+    if (!this.isLoggedIn()) {
+      this.showLogin();
+      return false;
+    }
+    return true;
+  },
+
+  // ── Login handler ─────────────────────────────────────────
+  async handleLogin(event) {
+    event.preventDefault();
+    const emailInput = document.getElementById('login-email');
+    const passInput  = document.getElementById('login-password');
+    const errorDiv   = document.getElementById('login-error');
+    const btn        = document.getElementById('btn-login');
+
+    const email    = emailInput.value.trim().toLowerCase();
+    const password = passInput.value;
+
+    errorDiv.style.display = 'none';
+    btn.classList.add('loading');
+    btn.textContent = 'Verificando...';
+
+    try {
+      const passwordHash = await this.sha256(password);
+
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'login', email, password_hash: passwordHash })
+      });
+      const json = await res.json();
+
+      if (!json.success) {
+        errorDiv.textContent = json.error || 'Credenciales incorrectas';
+        errorDiv.style.display = 'flex';
+        passInput.value = '';
+        passInput.focus();
+        return;
+      }
+
+      // Guardar sesión en localStorage
+      this.saveSession({
+        nombre : json.nombre,
+        email  : json.email,
+        rol    : json.rol,
+        token  : json.token
+      });
+
+      this.showApp();
+      app.loadInitialData();
+
+    } catch (err) {
+      console.error(err);
+      errorDiv.textContent = 'Error de conexión. Intenta de nuevo.';
+      errorDiv.style.display = 'flex';
+    } finally {
+      btn.classList.remove('loading');
+      btn.innerHTML = '<i data-lucide="log-in"></i> Ingresar';
+      lucide.createIcons();
+    }
+  },
+
+  // ── Logout ────────────────────────────────────────────────
+  logout() {
+    this.clearSession();
+    // Reset app state
+    app.state.estudiantes = [];
+    app.state.entidades   = [];
+    app.state.sesiones    = [];
+    app.state.documentos  = [];
+    this.showLogin();
+  },
+
+  // ── Restricciones de rol en el frontend ────────────────────
+  applyRoleRestrictions() {
+    const isCoord = this.isCoordinador();
+    // Ocultar elementos exclusivos de coordinador para docentes
+    document.querySelectorAll('.rol-coordinador').forEach(el => {
+      el.style.display = isCoord ? '' : 'none';
+    });
+  },
+
+  // ── Info del usuario en sidebar ───────────────────────────
+  renderSidebarUser() {
+    const s = this.getSession();
+    if (!s) return;
+    const initials = s.nombre
+      .split(' ')
+      .slice(0, 2)
+      .map(w => w[0] || '')
+      .join('')
+      .toUpperCase();
+    const rolLabel = s.rol === 'coordinador' ? 'Coordinador/a' : 'Docente';
+    document.getElementById('sidebar-user-info').innerHTML = `
+      <div class="sidebar-user-avatar">${initials}</div>
+      <div class="sidebar-user-details">
+        <div class="sidebar-user-name">${s.nombre}</div>
+        <div class="sidebar-user-role">${rolLabel}</div>
+      </div>
+    `;
+  },
+
+  // ── Toggle visibilidad contraseña (login) ─────────────────
+  togglePasswordVisibility() {
+    const input   = document.getElementById('login-password');
+    const icon    = document.getElementById('eye-icon');
+    const isHidden = input.type === 'password';
+    input.type    = isHidden ? 'text' : 'password';
+    icon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+    lucide.createIcons();
+  },
+
+  toggleNewUserPassword() {
+    const input   = document.getElementById('new-user-password');
+    const icon    = document.getElementById('eye-icon-new');
+    const isHidden = input.type === 'password';
+    input.type    = isHidden ? 'text' : 'password';
+    icon.setAttribute('data-lucide', isHidden ? 'eye-off' : 'eye');
+    lucide.createIcons();
+  },
+
+  // ── Crear usuario (solo coordinador) ───────────────────────
+  async crearUsuario(event) {
+    event.preventDefault();
+    if (!this.isCoordinador()) return;
+
+    const session  = this.getSession();
+    const nombre   = document.getElementById('new-user-nombre').value.trim();
+    const email    = document.getElementById('new-user-email').value.trim().toLowerCase();
+    const rol      = document.getElementById('new-user-rol').value;
+    const password = document.getElementById('new-user-password').value;
+
+    const errDiv  = document.getElementById('create-user-error');
+    const okDiv   = document.getElementById('create-user-success');
+    const btn     = document.getElementById('btn-crear-usuario');
+
+    errDiv.style.display = 'none';
+    okDiv.style.display  = 'none';
+    btn.disabled = true;
+    btn.textContent = 'Creando...';
+
+    try {
+      const passwordHash = await this.sha256(password);
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action       : 'createUser',
+          email        : session.email,
+          token        : session.token,
+          newEmail     : email,
+          nombre,
+          rol,
+          password_hash: passwordHash
+        })
+      });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+
+      okDiv.textContent   = `✓ Usuario "${nombre}" creado exitosamente.`;
+      okDiv.style.display = 'flex';
+      document.getElementById('form-crear-usuario').reset();
+    } catch (err) {
+      console.error(err);
+      errDiv.textContent   = err.message || 'Error creando el usuario.';
+      errDiv.style.display = 'flex';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="user-plus"></i> Crear Usuario';
+      lucide.createIcons();
+    }
+  }
+};
+
+// ───────────────────────────────────────────────────────── 
 
 const app = {
     state: {
@@ -11,7 +255,17 @@ const app = {
     },
 
     init() {
+        // El router siempre se configura (elementos del DOM ya existen)
         this.setupRouter();
+
+        // Auth guard: si no hay sesión activa, mostrar login y detener
+        if (!auth.isLoggedIn()) {
+            auth.showLogin();
+            return;
+        }
+
+        // Sesión existente → mostrar app y cargar datos
+        auth.showApp();
         this.loadInitialData();
     },
 
@@ -37,6 +291,7 @@ const app = {
         if (viewId === 'dashboard') this.renderDashboard();
         if (viewId === 'estudiantes') this.renderEstudiantes();
         if (viewId === 'entidades') this.renderEntidades();
+        // configuracion: la vista se activa por el mecanismo genérico de arriba
         
         lucide.createIcons();
     },
@@ -58,9 +313,13 @@ const app = {
     },
 
     async fetchSheet(sheetName) {
+        const session = auth.getSession();
+        if (!session) { auth.logout(); return []; }
         try {
-            const res = await fetch(`${API_URL}?sheet=${sheetName}`);
+            const url = `${API_URL}?sheet=${sheetName}&email=${encodeURIComponent(session.email)}&token=${encodeURIComponent(session.token)}`;
+            const res = await fetch(url);
             const json = await res.json();
+            if (json.error === 'No autorizado') { auth.logout(); return []; }
             return json.data ? json.data.slice(1) : []; // saltar encabezados
         } catch (e) {
             console.error(`Error fetching ${sheetName}`, e);
@@ -69,14 +328,21 @@ const app = {
     },
 
     async postSheet(payload) {
+        const session = auth.getSession();
+        if (!session) { auth.logout(); throw new Error('Sin sesión'); }
         try {
+            // Inyectar email y token en cada POST protegido
+            const body = { ...payload, email: session.email, token: session.token };
             // Se usa text/plain para evitar el preflight OPTIONS de CORS
             const res = await fetch(API_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(body)
             });
             const json = await res.json();
+            if (json.error === 'No autorizado' || (json.success === false && json.error === 'No autorizado')) {
+                auth.logout(); throw new Error('No autorizado');
+            }
             if (!json.success) throw new Error(json.error);
             return json;
         } catch(e) {
@@ -303,6 +569,7 @@ const app = {
     // --- ENTIDADES ---
     renderEntidades() {
         const tbody = document.querySelector('#table-entidades tbody');
+        const isCoord = auth.isCoordinador();
         tbody.innerHTML = this.state.entidades.map(e => {
             const badgeClass = e.aprobada ? 'aprobada' : 'pendiente';
             return `
@@ -312,7 +579,7 @@ const app = {
                 <td>${e.estudiantes_activos}/${e.cupo_maximo}</td>
                 <td><span class="badge ${badgeClass}">${e.aprobada ? 'Aprobada' : 'Pendiente'}</span></td>
                 <td>
-                    ${!e.aprobada ? `<button class="btn btn-outline" onclick="app.aprobarEntidad('${e.id}')">Aprobar</button>` : ''}
+                    ${(isCoord && !e.aprobada) ? `<button class="btn btn-outline" onclick="app.aprobarEntidad('${e.id}')">Aprobar</button>` : ''}
                 </td>
             </tr>
         `}).join('');

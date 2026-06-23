@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Generador de Hash — SSEO Control</title>
+  <style>
+    body { font-family: 'Segoe UI', sans-serif; background: #F5F0E8; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
+    .card { background: #fff; border: 1px solid #D6CFC3; border-radius: 10px; padding: 36px; width: 420px; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
+    h1 { font-size: 1.2rem; margin: 0 0 6px; color: #1A1714; }
+    p  { font-size: .85rem; color: #8A8279; margin: 0 0 24px; }
+    label { display: block; font-size: .85rem; color: #8A8279; margin-bottom: 6px; }
+    input { width: 100%; padding: 10px 12px; border: 1px solid #D6CFC3; border-radius: 6px; font-size: .9rem; box-sizing: border-box; margin-bottom: 16px; }
+    button { width: 100%; padding: 11px; background: #1D6A4A; color: #fff; border: none; border-radius: 6px; font-size: .95rem; font-weight: 600; cursor: pointer; }
+    button:hover { background: #165A3D; }
+    .result { margin-top: 20px; display: none; }
+    .result label { color: #1D6A4A; font-weight: 600; }
+    .hash-box { background: #EDE8DF; border: 1px solid #D6CFC3; border-radius: 6px; padding: 12px; font-family: monospace; font-size: .8rem; word-break: break-all; color: #1A1714; cursor: pointer; position: relative; }
+    .hash-box:hover::after { content: "Clic para copiar"; position: absolute; top: -28px; left: 50%; transform: translateX(-50%); background: #1A1714; color: #fff; padding: 4px 10px; border-radius: 4px; font-size: .75rem; white-space: nowrap; }
+    .copied { font-size: .8rem; color: #1D6A4A; margin-top: 8px; display: none; font-weight: 600; }
+    .note { margin-top: 20px; background: #FEF3C7; border: 1px solid #F59E0B; border-radius: 6px; padding: 12px; font-size: .8rem; color: #92400E; }
+  </style>
+</head>
+<body>
+<div class="card">
+  <h1>🔐 Generador de Hash</h1>
+  <p>Ingresa la contraseña del usuario. Se genera el hash SHA-256 que debes pegar en la columna <strong>password_hash</strong> de la hoja <em>usuarios</em>.</p>
+
+  <label for="pw">Contraseña</label>
+  <input type="password" id="pw" placeholder="Escribe la contraseña aquí">
+
+  <button onclick="generar()">Generar Hash</button>
+
+  <div class="result" id="result">
+    <label>Hash SHA-256 — pega esto en Sheets:</label>
+    <div class="hash-box" id="hash" onclick="copiar()"></div>
+    <div class="copied" id="copied">✓ ¡Copiado al portapapeles!</div>
+  </div>
+
+  <div class="note">
+    ⚠️ Esta página es solo una herramienta local. La contraseña <strong>no se envía a ningún servidor</strong>. Ciérrala cuando termines.
+  </div>
+</div>
+
+<script>
+async function generar() {
+  const pw = document.getElementById('pw').value;
+  if (!pw) { alert('Escribe una contraseña primero.'); return; }
+
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(pw));
+  const hash = Array.from(new Uint8Array(buf))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+
+  document.getElementById('hash').textContent = hash;
+  document.getElementById('result').style.display = 'block';
+  document.getElementById('copied').style.display = 'none';
+}
+
+async function copiar() {
+  const hash = document.getElementById('hash').textContent;
+  await navigator.clipboard.writeText(hash);
+  const copied = document.getElementById('copied');
+  copied.style.display = 'block';
+  setTimeout(() => copied.style.display = 'none', 2500);
+}
+
+// Permitir Enter
+document.getElementById('pw').addEventListener('keydown', e => {
+  if (e.key === 'Enter') generar();
+});
+</script>
+</body>
+</html>
